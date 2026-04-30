@@ -29,10 +29,7 @@ public unsafe struct UnsafeArray<T> : IUnsafeMap<T>, IDisposable where T : unman
             Length = index + 1;
     }
 
-    public readonly ref T Get(int index)
-    {
-        return ref Data[index];
-    }
+    public readonly ref T this[int index] => ref Data[index];
 
     public void Dispose()
     {
