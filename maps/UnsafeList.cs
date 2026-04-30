@@ -2,30 +2,51 @@ using System.Runtime.InteropServices;
 
 namespace unsafe_maps.maps;
 
-public unsafe struct NativeList<T> : IUnsafeMap<T>, IDisposable where T : unmanaged
+public unsafe struct UnsafeList<T> : IUnsafeMap<T>, IDisposable where T : unmanaged
 {
-    public T* data;
-    public int length;
-    public int capacity;
+    public T* Data { get; set; }
+    public int Length { get; set; }
+    public int Capacity { get; set; }
 
-    public NativeList(int capacity)
+    public UnsafeList(int capacity)
     {
-        length = 0;
-        this.capacity = capacity;
-        data = (T*)Marshal.AllocHGlobal(sizeof(T) * capacity);
+        Length = 0;
+        Capacity = capacity;
+        Data = (T*)Marshal.AllocHGlobal(sizeof(T) * Capacity);
 
-        //new Span<T>(data, capacity).Clear();
+        //new Span<T>(Data, Capacity).Clear();
     }
 
     public void Add(T value)
     {
-        if (length >= capacity)
+        if (Length >= Capacity)
         {
-            Resize(capacity * 2);
+            Resize(Capacity * 2);
         }
 
-        data[length] = value;
-        length++;
+        Data[Length] = value;
+        Length++;
+    }
+
+    public void AddRange(UnsafeArray<T> values)
+    {
+        if (values.Length == 0)
+            return;
+        if (values.Data == Data)
+            throw new InvalidOperationException("self add range not supported");
+
+        if (Length + values.Length >= Capacity)
+        {
+            Resize(Math.Max(Capacity * 2, Length + values.Length));
+        }
+
+        Buffer.MemoryCopy(
+            values.Data,
+            Data + Length,
+            (Capacity - Length) * sizeof(T),
+            values.Length * sizeof(T));
+
+        Length += values.Length; 
     }
 
     private void Resize(int newCapacity)
@@ -33,20 +54,35 @@ public unsafe struct NativeList<T> : IUnsafeMap<T>, IDisposable where T : unmana
         T* newData = (T*)Marshal.AllocHGlobal(sizeof(T) * newCapacity);
 
         Buffer.MemoryCopy(
-            data, newData,
+            Data, newData,
             newCapacity * sizeof(T),
-            length * sizeof(T));
+            Length * sizeof(T));
 
-        Marshal.FreeHGlobal((IntPtr)data);
+        Marshal.FreeHGlobal((IntPtr)Data);
 
-        data = newData;
-        capacity = newCapacity;
+        Data = newData;
+        Capacity = newCapacity;
     }
 
-    public readonly ref T this[int index] => ref data[index];
+    public readonly ref T this[int index] => ref Data[index];
+
+    public readonly void CopyTo(IUnsafeMap<T> map)
+    {
+        if (Data == null)
+            return;
+
+        Buffer.MemoryCopy(
+            Data, map.Data,
+            map.Capacity * sizeof(T),
+            map.Length * sizeof(T));
+    }
 
     public void Dispose()
     {
-        Marshal.FreeHGlobal((IntPtr)data);
+        if (Data != null)
+        {
+            Marshal.FreeHGlobal((IntPtr)Data);
+            Data = null;
+        }
     }
 }
