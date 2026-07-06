@@ -18,10 +18,10 @@ public unsafe struct UnsafeHashSet<T> : IDisposable where T : unmanaged
         this.division = division;
 
         Capacity = capacity;
-        bucketCapacity = capacity / division;
+        bucketCapacity = Math.Max(1u, capacity / division);
 
         Slot = (Slot<T>*)NativeMemory.Alloc((nuint)(sizeof(Slot<T>) * capacity));
-        Bucket = (uint?*)NativeMemory.Alloc(sizeof(uint) * bucketCapacity);
+        Bucket = (uint?*)NativeMemory.Alloc((nuint)sizeof(uint?) * bucketCapacity);
 
         NativeMemory.Clear(Slot, (nuint)sizeof(Slot<T>) * capacity);
         NativeMemory.Clear(Bucket, sizeof(uint) * bucketCapacity);
@@ -125,14 +125,14 @@ public unsafe struct UnsafeHashSet<T> : IDisposable where T : unmanaged
 
     private void Resize(uint newCapacity)
     {
-        uint newBucketCapacity = newCapacity / division;
+        uint newBucketCapacity = Math.Max(1u, newCapacity / division);
         Capacity = newCapacity;
 
         Slot<T>* newSlot = (Slot<T>*)NativeMemory.Alloc((nuint)(sizeof(Slot<T>) * newCapacity));
         uint?* newBucket = (uint?*)NativeMemory.Alloc(sizeof(uint) * newBucketCapacity);
 
         NativeMemory.Clear(newSlot, (nuint)sizeof(Slot<T>) * newCapacity);
-        NativeMemory.Clear(newBucket, sizeof(uint) * newBucketCapacity);
+        NativeMemory.Clear(newBucket, (nuint)sizeof(uint?) * newBucketCapacity);
 
         Buffer.MemoryCopy(
             Slot, newSlot,
