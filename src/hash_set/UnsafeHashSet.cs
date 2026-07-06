@@ -24,7 +24,7 @@ public unsafe struct UnsafeHashSet<T> : IDisposable where T : unmanaged
         Bucket = (uint?*)NativeMemory.Alloc(sizeof(uint) * bucketCapacity);
 
         NativeMemory.Clear(Slot, (nuint)sizeof(Slot<T>) * capacity);
-        NativeMemory.Clear(Bucket, sizeof(int) * bucketCapacity);
+        NativeMemory.Clear(Bucket, sizeof(uint) * bucketCapacity);
     }
 
     public void Add(in T value)
@@ -132,15 +132,15 @@ public unsafe struct UnsafeHashSet<T> : IDisposable where T : unmanaged
         uint?* newBucket = (uint?*)NativeMemory.Alloc(sizeof(uint) * newBucketCapacity);
 
         NativeMemory.Clear(newSlot, (nuint)sizeof(Slot<T>) * newCapacity);
-        NativeMemory.Clear(newBucket, sizeof(int) * newBucketCapacity);
+        NativeMemory.Clear(newBucket, sizeof(uint) * newBucketCapacity);
 
         Buffer.MemoryCopy(
             Slot, newSlot,
             newCapacity * sizeof(Slot<T>),
             Length * sizeof(Slot<T>));
 
-        NativeMemory.Free(Slot);
         NativeMemory.Free(Bucket);
+        NativeMemory.Free(Slot);
 
         for (uint i = 0; i < Length; i++)
         {
