@@ -5,7 +5,7 @@ using SweetLib.Collections.Unsafe.List;
 
 namespace SweetLib.Collections.Unsafe.Array;
 
-public unsafe struct UnsafeArray<T> : IDisposable where T : unmanaged
+public unsafe struct UnsafeArray<T> where T : unmanaged
 {
     public T* Data;
 

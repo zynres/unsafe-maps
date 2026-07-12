@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace SweetLib.Collections.Unsafe.HashSet;
 
-public unsafe struct UnsafeHashSet<T> : IDisposable where T : unmanaged
+public unsafe struct UnsafeHashSet<T> where T : unmanaged
 {
     public uint* Bucket;
     public Slot<T>* Slot;
