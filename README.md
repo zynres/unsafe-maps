@@ -1,1 +1,1 @@
-# SweetCollections
+# Sweet Library: Collections
