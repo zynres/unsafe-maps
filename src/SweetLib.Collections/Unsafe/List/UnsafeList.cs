@@ -17,8 +17,6 @@ public unsafe struct UnsafeList<T> where T : unmanaged
         Length = 0;
         Capacity = capacity;
         Data = (T*)NativeMemory.Alloc((nuint)(sizeof(T) * capacity));
-
-        NativeMemory.Clear(Data, (nuint)sizeof(T) * capacity);
     }
 
     public void Add(T value)
@@ -108,5 +106,8 @@ public unsafe struct UnsafeList<T> where T : unmanaged
             NativeMemory.Free(Data);
             Data = null;
         }
+
+        Capacity = 0;
+        Length = 0;
     }
 }

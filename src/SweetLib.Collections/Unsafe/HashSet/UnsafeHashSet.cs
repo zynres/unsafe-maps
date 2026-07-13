@@ -68,6 +68,8 @@ public unsafe struct UnsafeHashSet<T> where T : unmanaged
                 break;
             }
 
+            // point to the next element so that, if it matches the slot to be modified, 
+            // we can update its next pointer to the next of the slot being modified.
             bucket = &linkedSlot->Next;
         }
 
@@ -82,26 +84,19 @@ public unsafe struct UnsafeHashSet<T> where T : unmanaged
         *bucket = index;
     }
 
-    public readonly ref T Get(uint index)
+    // return ref readonly because the map is built based on the hash of the value, 
+    // changing the value without assigning it to a new bucket would break the map.
+    public readonly ref readonly T Get(uint index)
     {
         if (index >= Length)
             throw new IndexOutOfRangeException();
 
-        return ref Slot[index].Value;
+        return ref Slots[index].Value;
     }
 
-    public ref T Emplace(uint index)
-    {
-        if (index >= Capacity)
-            throw new ArgumentOutOfRangeException();
+    public readonly ref readonly T this[uint index] => ref Get(index);
 
-        if (index >= Length)
-            Length = index + 1;
-
-        return ref Slot[index].Value;
-    }
-
-    public readonly bool Constaint(in T value)
+    public readonly bool Contains(in T value)
     {
         int hash = value.GetHashCode();
         uint bucket_index = (uint)hash % bucketCapacity;
@@ -121,8 +116,6 @@ public unsafe struct UnsafeHashSet<T> where T : unmanaged
             index = &slot->Next;
         }
     }
-
-    public readonly ref T this[uint index] => ref Get(index);
 
     private void Resize(uint newCapacity)
     {
@@ -145,6 +138,7 @@ public unsafe struct UnsafeHashSet<T> where T : unmanaged
         NativeMemory.Free(Bucket);
         NativeMemory.Free(Slot);
 
+        // remapping values in the bucket because its size was changed
         for (uint i = 0; i < Length; i++)
         {
             Slot<T>* slot = &newSlot[i];
@@ -167,22 +161,27 @@ public unsafe struct UnsafeHashSet<T> where T : unmanaged
         slot = (Slot<T>*)NativeMemory.Alloc((nuint)(sizeof(Slot<T>) * capacity));
         bucket = (uint*)NativeMemory.Alloc(sizeof(uint) * bucketCapacity);
 
-        NativeMemory.Clear(slot, (nuint)sizeof(Slot<T>) * capacity);
-        NativeMemory.Fill(bucket, sizeof(uint) * bucketCapacity, 0xFF);
+        // Fill the bucket values to maximum values, 
+        // because the check for emptiness is performed using uint.MaxValue.
+        NativeMemory.Fill(bucket.Data, sizeof(uint) * bucket.Capacity, 0xFF);
     }
 
     public void Dispose()
     {
-        if (Bucket != null)
+        if (Bucket.Data != null)
         {
-            NativeMemory.Free(Bucket);
-            Bucket = null;
+            NativeMemory.Free(Bucket.Data);
+            Bucket.Data = null;
         }
 
-        if (Slot != null)
+        if (Slots != null)
         {
-            NativeMemory.Free(Slot);
-            Slot = null;
+            NativeMemory.Free(Slots);
+            Slots = null;
         }
+
+        Bucket.Capacity = 0;
+        Capacity = 0;
+        Length = 0;
     }
 }

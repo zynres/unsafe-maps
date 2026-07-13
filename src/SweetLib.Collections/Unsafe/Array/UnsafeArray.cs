@@ -15,8 +15,6 @@ public unsafe struct UnsafeArray<T> where T : unmanaged
     {
         Length = capasity;
         Data = (T*)NativeMemory.Alloc((nuint)(sizeof(T) * capasity));
-
-        NativeMemory.Clear(Data, (nuint)sizeof(T) * capasity);
     }
 
     public void Set(uint index, T value)
@@ -65,5 +63,7 @@ public unsafe struct UnsafeArray<T> where T : unmanaged
             NativeMemory.Free(Data);
             Data = null;
         }
+
+        Length = 0;
     }
 }

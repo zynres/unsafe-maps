@@ -5,7 +5,7 @@ public struct Slot<TKey, TValue>
     where TValue : unmanaged
 {
     public int Hash;
-    public int Next;
+    public uint Next;
 
     public TKey Key;
     public TValue Value;
